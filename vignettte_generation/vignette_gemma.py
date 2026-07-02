@@ -7,7 +7,7 @@ from pathlib import Path
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Generate vignettes with Gemma 4")
-    parser.add_argument("model_id", type=str, help="e.g. google/gemma-4-12B-it")
+    parser.add_argument("model_id", type=str, help="e.g. google/medgemma-4b-it")
     parser.add_argument("--output-dir", type=str, default="output")
     parser.add_argument("--batch-size", type=int, default=8,
                         help="Samples generated per forward pass. Tune to VRAM.")
