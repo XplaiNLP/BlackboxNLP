@@ -93,9 +93,9 @@ patches after the normalization and restores the effect. `auto` selects per mode
 | `-alpha` | off | Interpolation mode `(1-a)·z_dest + a·z_src` instead of scaling |
 | `-mismatched_source` | off | Control: patch the neutral "patient" activation |
 | `-prompt_id` | none | Run under Zack template 1–10 instead of the default |
+| `-max_new_tokens` | `80` | Readout window; raise for verbose models (Gemma-3 uses 256) |
 | `-load_in_4bit` | `true` | Pass `false` for full-precision bf16 |
 | `-outer_n` / `-inner_n` | `25` / `20` | Batch counts; the defaults give 500 vignettes |
-
 Results are written to `IA_{mode}_{prompt}_{condition}_{target}_l{L}_w{W}_{site}_{model}.csv`.
 
 ### 3. Specificity controls
