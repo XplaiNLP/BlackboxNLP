@@ -50,7 +50,6 @@ python3 get_patching_scores.py \
     -source Caucasian -target Asian \
     -model_name allenai/OLMo-7B-0724-Instruct-hf -output_dir outputs
 ```
-
 | Flag | Purpose |
 | --- | --- |
 | `-lm_head_depth` | Readout offset for the demographic token. Defaults to the per-model value in `model_registry`; overriding it reproduces the flat sweep obtained under a fixed offset. |
