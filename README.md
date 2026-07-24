@@ -50,11 +50,11 @@ python3 get_patching_scores.py \
     -source Caucasian -target Asian \
     -model_name allenai/OLMo-7B-0724-Instruct-hf -output_dir outputs
 ```
-| Flag | Purpose |
-| --- | --- |
-| `-lm_head_depth` | Readout offset for the demographic token. Defaults to the per-model value in `model_registry`; overriding it reproduces the flat sweep obtained under a fixed offset. |
-| `-greedy_trace` | Deterministic generation in the trace, so the score does not depend on the sampling seed. |
-| `-sexed_condition` | Gender only: patch from a sex-exclusive condition (prostate cancer / preeclampsia) instead of an explicit "The patient is Male" prompt. |
+| Flag | Default | Purpose |
+| --- | --- | --- |
+| `-lm_head_depth` | per-model | Readout offset for the demographic token |
+| `-greedy_trace` | off | Deterministic generation; removes seed dependence |
+| `-sexed_condition` | off | Gender only: patch from prostate cancer / preeclampsia instead of an explicit prompt |
 
 The script writes `<...>-patch_scores.p` and attempts a heatmap. If plotly is absent
 the pickle is still written, and the plot can be produced separately:
@@ -86,13 +86,15 @@ post-norm models (Gemma-2, Gemma-3, MedGemma, OLMo-2) the script prints a warnin
 that the factor is annihilated by RMSNorm before the residual add. `post_norm`
 patches after the normalization and restores the effect. `auto` selects per model.
 
-| Flag | Purpose |
-| --- | --- |
-| `-window k` | Sliding window: patch layers `L-k … L+k` (Table 6, `SW` column). Race with `window > 0` runs factor 1 only. |
-| `-alpha a [a …]` | Interpolation mode, `z := (1-a)·z_dest + a·z_src`, in place of multiplicative scaling. Changes direction rather than magnitude, so it survives RMSNorm at either site. Omit for the paper's factors 1/2/5. |
-| `-prompt_id 1–10` | Run under one of the ten Zack et al. templates instead of the default patching template, testing whether the patch is a property of the model or of the prompt. |
-| `-load_in_4bit false` | Full-precision bf16, to check quantization sensitivity of the unscaled patch. |
-| `-outer_n`,`-inner_n` | Batch counts; the defaults (25 × 20) give the 500 vignettes reported. |
+| Flag | Default | Purpose |
+| --- | --- | --- |
+| `-patch_site` | `down_proj` | `down_proj`, `post_norm`, or `auto` — see below |
+| `-window` | `0` | Sliding window: patch layers `L-k … L+k` |
+| `-alpha` | off | Interpolation mode `(1-a)·z_dest + a·z_src` instead of scaling |
+| `-mismatched_source` | off | Control: patch the neutral "patient" activation |
+| `-prompt_id` | none | Run under Zack template 1–10 instead of the default |
+| `-load_in_4bit` | `true` | Pass `false` for full-precision bf16 |
+| `-outer_n` / `-inner_n` | `25` / `20` | Batch counts; the defaults give 500 vignettes |
 
 Results are written to `IA_{mode}_{prompt}_{condition}_{target}_l{L}_w{W}_{site}_{model}.csv`.
 
