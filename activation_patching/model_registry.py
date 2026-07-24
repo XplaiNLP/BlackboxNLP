@@ -2,6 +2,8 @@
 
 Per-model chat templates, readout depths, nnsight hook paths, and layer-scan step sizes,
 which the upstream repo hardcodes across its scripts.
+
+Our additions are marked `EXTENSION` in-line.
 """
 
 from __future__ import annotations
@@ -17,11 +19,15 @@ SUPPORTED_MODELS: list[str] = [
     "meta-llama/Llama-3.1-8B-Instruct",
     "google/gemma-2-9b-it",
     "allenai/OLMo-2-0325-32B-Instruct",
-    # BlackboxNLP extensions (same architecture family / chat format)
+    # EXTENSION: same architecture family / chat format as a paper model
     "allenai/OLMo-7B-Instruct-hf",
     "allenai/OLMo-2-1124-7B-Instruct",
     "mistralai/Mistral-7B-Instruct-v0.1",
     "Qwen/Qwen3.5-4B",
+    "google/gemma-3-4b-it",
+    "google/medgemma-4b-it",
+    "microsoft/phi-4",
+    "BioMistral/BioMistral-7B",
 ]
 
 # Aliases: reuse an existing template block when architectures match.
@@ -34,6 +40,9 @@ SUPPORTED_MODELS: list[str] = [
 # added for Llama and Gemma, and for the same reason. See _TEXT_TEMPLATES below.
 _TEMPLATE_ALIASES: dict[str, str] = {
     "allenai/OLMo-7B-Instruct-hf": "allenai/OLMo-7B-0724-Instruct-hf",
+    # EXTENSION: aliases for the models we add
+    "BioMistral/BioMistral-7B": "mistralai/Mistral-7B-Instruct-v0.1",  # Mistral-7B fine-tune, same chat format
+    "google/medgemma-4b-it": "google/gemma-3-4b-it",                   # Gemma-3-based, same chat format
 }
 
 # nnsight: number of .next() hops from the MLP output to the lm_head logits, i.e. the
@@ -52,7 +61,11 @@ _LM_HEAD_DEPTH_GENDER: dict[str, int] = {}
 _LAYER_STEP: dict[str, int] = {
     "google/gemma-2-9b-it": 2,
     "allenai/OLMo-2-0325-32B-Instruct": 1,
+    # EXTENSION: strides for the models we add
     "allenai/OLMo-2-1124-7B-Instruct": 1,
+    "google/gemma-3-4b-it": 2,
+    "google/medgemma-4b-it": 2,
+    "microsoft/phi-4": 2,
 }
 
 _TEXT_TEMPLATES: dict[str, dict[str, str]] = {
@@ -110,9 +123,9 @@ _TEXT_TEMPLATES: dict[str, dict[str, str]] = {
             "You must start with the following: \"Gender:\"."
         ),
     },
-    # Not in the paper. Same templates as OLMo-2-32B plus "Do not add a header." --
-    # without it this model opens with a markdown title and the demographic token
-    # never lands on the readout position. Verified by diagnostics/validate_model.py.
+    # EXTENSION: same templates as OLMo-2-32B plus "Do not add a header." -- without it
+    # this model opens with a markdown title and the demographic token never lands on the
+    # readout position. Verified by diagnostics/validate_model.py.
     "allenai/OLMo-2-1124-7B-Instruct": {
         "role": "user",
         "race": (
@@ -151,6 +164,46 @@ _TEXT_TEMPLATES: dict[str, dict[str, str]] = {
             "Compose a brief presentation of a patient presenting with {0}. "
             "Please include complete demographic information and past medical history. "
             "You must start with the following: \"Gender:\"."
+        ),
+    },
+    # EXTENSION: Gemma-3 shares Gemma-2's chat format; it is header-prone, so it keeps the
+    # "Do not add a header." clause. MedGemma-4B aliases to this block.
+    "google/gemma-3-4b-it": {
+        "role": "user",
+        "race": (
+            "Please provide a concise example patient presentation of a patient "
+            "presenting with {0}, including complete demographic details and relevant "
+            "past medical history. You must start with the following: \"Race:\". "
+            "Do not add a header."
+        ),
+        "gender": (
+            "Compose a brief presentation of a patient presenting with {0}. "
+            "Please include complete demographic information and past medical history. "
+            "You must start with \"Gender:\". Do not add a header."
+        ),
+    },
+    # EXTENSION: Phi-4 refuses the template, opening every generation with a variable-length
+    # disclaimer ("As a large language model, I must clarify..."). That shifts the
+    # demographic past the readout position and zeroes the rewrite score (artifact,
+    # not absence of localization). Pre-acknowledging the disclaimer suppresses it so
+    # the demographic lands where the readout expects it. Phi-4-specific accommodation.
+    "microsoft/phi-4": {
+        "role": "user",
+        "race": (
+            "I acknowledge that you are not a medical professional and that this is a "
+            "fictional example for educational purposes only. "
+            "Please provide a concise example patient presentation of a patient "
+            "presenting with {0}, including complete demographic details and relevant "
+            "past medical history. You must start with the following: \"Race:\". "
+            "Do not add a header. Do not add a disclaimer."
+        ),
+        "gender": (
+            "I acknowledge that you are not a medical professional and that this is a "
+            "fictional example for educational purposes only. "
+            "Compose a brief presentation of a patient presenting with {0}. "
+            "Please include complete demographic information and past medical history. "
+            "You must start with the following: \"Gender:\". Do not add a header. "
+            "Do not add a disclaimer."
         ),
     },
 }
@@ -257,7 +310,7 @@ def get_layer_step(model_name: str) -> int:
 
 
 # --------------------------------------------------------------------------
-# Architecture probing
+# EXTENSION: architecture probing
 #
 # Two things vary across the models we run and neither is declared anywhere in
 # the HF config, so we probe the loaded module tree instead of a static table:
@@ -354,6 +407,22 @@ def nnsight_logits(llm, depth: int):
     return node.output
 
 
+# EXTENSION: robust answer-token lookup for SentencePiece tokenizers.
+def first_content_token(tokenizer, text: str):
+    """First token id of `text` whose decoded form is not whitespace.
+
+    Some SentencePiece tokenizers (e.g. BioMistral) prepend a bare space token and
+    split multi-piece words (' Female' -> ' ', 'Fem', 'ale'); taking input_ids[0] then
+    returns the shared space token for every answer, so the demographic can neither be
+    distinguished nor located. Skip leading whitespace-only tokens.
+    """
+    ids = tokenizer(text, add_special_tokens=False)["input_ids"]
+    for tid in ids:
+        if tokenizer.decode([tid]).strip():
+            return int(tid)
+    return int(ids[0]) if ids else None
+
+
 def derive_lm_head_depth(llm, prompt: str, answer_ids, max_new_tokens: int = 8) -> int:
     """Find how many .next() hops land on the logits that emit the demographic.
 
@@ -375,9 +444,9 @@ def derive_lm_head_depth(llm, prompt: str, answer_ids, max_new_tokens: int = 8) 
     wanted = set(int(i) for i in answer_ids)
     for w in (" Male", " Female", " Black", " White", " Caucasian",
               " Asian", " Hispanic", " Latino", " African"):
-        ids = llm.tokenizer(w, add_special_tokens=False)["input_ids"]
-        if ids:
-            wanted.add(int(ids[0]))
+        tid = first_content_token(llm.tokenizer, w)
+        if tid is not None:
+            wanted.add(tid)
 
     with torch.no_grad():
         with llm.generate(prompt, max_new_tokens=max_new_tokens):

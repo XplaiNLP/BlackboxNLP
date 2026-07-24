@@ -31,7 +31,9 @@ from transformers import AutoTokenizer
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from model_registry import (
     SUPPORTED_MODELS,
+    first_content_token,
     get_layer_step,
+    get_layers,
     get_lm_head_depth,
     get_text_templates,
     nnsight_logits,
@@ -161,7 +163,9 @@ if __name__ == '__main__':
 
     prompt_id = 0
     corrupt_id = 1
-    N_LAYERS = len(llm.model.layers)
+    # EXTENSION: get_layers() handles wrappers that keep the decoder under model.language_model (Gemma-3/MedGemma)
+    layers = get_layers(llm)
+    N_LAYERS = len(layers)
     softmax = torch.nn.Softmax(dim=-1)
 
     clean_tokens = llm.tokenizer(prompts[0], return_tensors="pt")["input_ids"][0]
@@ -200,8 +204,9 @@ if __name__ == '__main__':
     
 
     print('patch_token_from', patch_token_from)
+    # EXTENSION: first_content_token skips SentencePiece leading-space tokens
     answer_token_indices = [
-                [llm.tokenizer(answers[i][j], add_special_tokens = False)["input_ids"][0] for j in range(2)]
+                [first_content_token(llm.tokenizer, answers[i][j]) for j in range(2)]
                 for i in range(len(answers))
         ]
     print("answer_tokens = " , answer_token_indices)
@@ -228,7 +233,7 @@ if __name__ == '__main__':
                 with tracer.invoke(prompts[prompt_id]) as invoker:
                     z_hs = {}
                     for layer_idx in range(N_LAYERS):
-                        z = llm.model.layers[layer_idx].mlp.down_proj.output
+                        z = layers[layer_idx].mlp.down_proj.output
                         z_hs[layer_idx] = z[:, patch_token_from, :]
 
                                             
@@ -242,9 +247,9 @@ if __name__ == '__main__':
                 for layer_idx in range(start, end):
                     for token_idx in range(len(corrupted_tokens)):
                         with tracer.invoke(prompts[corrupt_id]) as invoker:
-                            z_corrupt = llm.model.layers[layer_idx].mlp.down_proj.output
+                            z_corrupt = layers[layer_idx].mlp.down_proj.output
                             z_corrupt[:,token_idx+offset,:] = z_hs[layer_idx]
-                            llm.model.layers[layer_idx].mlp.down_proj.output = z_corrupt
+                            layers[layer_idx].mlp.down_proj.output = z_corrupt
 
                             patched_logits = nnsight_logits(llm, lm_head_depth)
                     

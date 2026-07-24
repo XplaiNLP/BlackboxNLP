@@ -28,6 +28,7 @@ from model_registry import (  # noqa: E402
     SUPPORTED_MODELS,
     derive_lm_head_depth,
     describe_architecture,
+    first_content_token,
     get_layers,
     get_patch_site,
     get_text_templates,
@@ -136,7 +137,7 @@ def main():
     clean_ids = llm.tokenizer(clean, return_tensors="pt")["input_ids"][0]
     corrupt_ids = llm.tokenizer(corrupted, return_tensors="pt")["input_ids"][0]
 
-    answer_ids = [llm.tokenizer(a, add_special_tokens=False)["input_ids"][0] for a in answers]
+    answer_ids = [first_content_token(llm.tokenizer, a) for a in answers]
     print(f"\n    answer tokens: {answers} -> ids {answer_ids}")
 
     # ---- 3: source token position -------------------------------------------
