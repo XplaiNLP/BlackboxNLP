@@ -12,6 +12,8 @@ Our additions are marked `EXTENSION` / `CONTROL` in-line:
                 multiplicative scaling.
   -mismatched_source  source-specificity control (patch the neutral "patient" activation).
   -load_in_4bit toggle 4-bit quantization.
+  -max_new_tokens  free-form readout window (default 80, the paper's value); raise it for
+                   verbose models whose demographic lands past the window (Gemma-3 uses 256).
 """
 import os
 import sys
@@ -101,6 +103,9 @@ if __name__ == '__main__':
     parser.add_argument('-load_in_4bit', type=lambda s: str(s).lower() != 'false', default=True,
                         help="Load in 4-bit (paper default, load_in_4bit=True). Pass 'false' for "
                              "full-precision bf16 to test quantization sensitivity of the unscaled patch.")
+    parser.add_argument('-max_new_tokens', type=int, default=80,
+                        help="Readout window for free-form generation (default 80). Raise for "
+                             "verbose models whose demographic lands past the window (e.g. Gemma-3).")
 
 
     args = parser.parse_args()
@@ -253,7 +258,7 @@ if __name__ == '__main__':
     temperature=0.7
 
     #for interchange accuracy
-    max_new_tokens = 80
+    max_new_tokens = args.max_new_tokens
 
     generate_kwargs = dict(do_sample=True, temperature=temperature, top_k=0, top_p=None)
 
