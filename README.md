@@ -54,7 +54,7 @@ python3 get_patching_scores.py \
 | --- | --- | --- |
 | `-lm_head_depth` | per-model | Readout offset for the demographic token |
 | `-greedy_trace` | off | Deterministic generation; removes seed dependence |
-| `-sexed_condition` | off | Gender only: patch from prostate cancer / preeclampsia instead of an explicit prompt |
+| `-sexed_condition` | off | Patch from prostate cancer / preeclampsia instead of an explicit prompt |
 
 The script writes `<...>-patch_scores.p` and attempts a heatmap. If plotly is absent
 the pickle is still written, and the plot can be produced separately:
