@@ -1,9 +1,9 @@
-# BlackboxNLP 
+# Scale-Invariant Normalization Hides Activation Scaling: Why Patch Site Matters for Demographic Bias Localization in Clinical Text Generation
 
-This repository hosts the code for our BlackboxNLP 2026 Reproducibility Challenge submission [title tbd]
+This repository hosts the code for our submission within the [BlackboxNLP 2026 Reproducibility Challenge (https://blackboxnlp.github.io/2026/reproducibility/)
 
 
-## Use
+## Folders
 
 
 To run the activation patching:
