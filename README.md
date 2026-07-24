@@ -93,7 +93,7 @@ patches after the normalization and restores the effect. `auto` selects per mode
 | `-alpha a [a …]` | Interpolation mode, `z := (1-a)·z_dest + a·z_src`, in place of multiplicative scaling. Changes direction rather than magnitude, so it survives RMSNorm at either site. Omit for the paper's factors 1/2/5. |
 | `-prompt_id 1–10` | Run under one of the ten Zack et al. templates instead of the default patching template, testing whether the patch is a property of the model or of the prompt. |
 | `-load_in_4bit false` | Full-precision bf16, to check quantization sensitivity of the unscaled patch. |
-| `-outer_n`, `-inner_n` | Batch counts; the defaults (25 × 20) give the 500 vignettes reported. |
+| `-outer_n`,`-inner_n` | Batch counts; the defaults (25 × 20) give the 500 vignettes reported. |
 
 Results are written to `IA_{mode}_{prompt}_{condition}_{target}_l{L}_w{W}_{site}_{model}.csv`.
 
