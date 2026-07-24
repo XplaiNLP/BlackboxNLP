@@ -1,4 +1,5 @@
-# Scale-Invariant Normalization Hides Activation Scaling: Why Patch Site Matters for Demographic Bias Localization in Clinical Text Generation
+# Scale-Invariant Normalization Hides Activation Scaling: 
+# Why Patch Site Matters for Demographic Bias Localization in Clinical Text Generation
 
 Code and data for our submission to the [BlackboxNLP 2026 Reproducibility Challenge](https://blackboxnlp.github.io/2026/reproducibility/).
 
@@ -11,8 +12,14 @@ through a scale-invariant RMSNorm, so activation scaling is inert by constructio
 
 | Folder | Contents |
 | --- | --- |
-| `plots/` | All figures appearing in the paper |
+| `plots/` | All figures in the paper, plus the extended per-model visualizations referred to in Appendix F |
 | `vignettes_outputs/` | Generated clinical vignettes per model |
 | `vignettes_analysis/` | Per-model CSVs with gender, race, and refusal distributions (organized in a directory per model family), plus the scripts that produce them |
 | `activation_patching/` | Patching and rewrite-score scripts |
 
+## Setup
+
+```bash
+git clone <repo-url> && cd <repo>
+pip install -r requirements.txt
+```
