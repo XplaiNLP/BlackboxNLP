@@ -20,7 +20,7 @@ through a scale-invariant RMSNorm, so activation scaling is inert by constructio
 
 ```bash
 git clone <repo-url> && cd <repo>
-pip install -r requirements.txt
+pip install -r activation_patching/requirements.txt
 ```
 ## Reproducing the patching results
 
