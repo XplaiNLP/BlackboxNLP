@@ -1,6 +1,7 @@
-# Scale-Invariant Normalization Hides Activation Scaling: Why Patch Site Matters for Demographic Bias Localization in Clinical Text Generation
+# [Scale-Invariant Normalization Hides Activation Scaling: Why Patch Site Matters for Demographic Bias Localization in Clinical Text Generation](https://aclanthology.org/2026.blackboxnlp-1.66/)
 
 Code and data for our submission to the [BlackboxNLP 2026 Reproducibility Challenge](https://blackboxnlp.github.io/2026/reproducibility/).
+
 
 We reproduce [Ahsan et al. (2025)]([https://aclanthology.org/2025.findings-emnlp.XXXX/](https://aclanthology.org/anthology-files/pdf/findings/2025.findings-emnlp.789.pdf)) on their four models, extend to ten, and show that
 two of their mechanistic findings follow from the site at which the patch is applied
